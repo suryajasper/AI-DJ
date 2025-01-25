@@ -11,11 +11,29 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --spotify: #1db954;
   }
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Style for Webkit Browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 4px; /* Width of the scrollbar */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: white; /* Color of the scrollbar thumb */
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* Transparent track */
 }

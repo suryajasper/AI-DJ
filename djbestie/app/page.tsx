@@ -1,101 +1,131 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useRef } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const canvasRef = useRef(null);
+  const audioRef = useRef(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const audio = audioRef.current;
+    const ctx = canvas.getContext("2d");
+
+    // Set up Web Audio API
+    const audioContext = new (window.AudioContext || window.AudioContext)();
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256; // Size of the frequency bin (power of 2)
+    const bufferLength = 30;
+    const dataArray = new Uint8Array(bufferLength);
+
+    // Connect audio element to analyser
+    const source = audioContext.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+
+    // Function to draw the visualizer
+    const drawVisualizer = () => {
+      requestAnimationFrame(drawVisualizer);
+
+      analyser.getByteFrequencyData(dataArray); // Get frequency data
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+      // Draw frequency bars
+      const barWidth = canvas.width / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = Math.sqrt(dataArray[i]) * 3.5 + 6;
+        const r = 255;
+        const g = 255;
+        const b = 255;
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+        const center = canvas.height / 2;
+        const barY = center - barHeight / 2; // Oscillating between top and bottom
+
+        ctx.fillRect(x, barY, barWidth, barHeight);
+        x += barWidth + 1;
+      }
+    };
+
+    // Start drawing when audio is playing
+    audio.onplay = () => {
+      audioContext.resume().then(() => {
+        drawVisualizer();
+      });
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    const timeout = setTimeout(() => {
+      if (audio.paused) {
+        audio.play();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeout); // Cleanup timeout on unmount
+  }, []);
+
+  return (
+    <div className="w-screen h-screen px-[5%] flex justify-center items-center gap-[48px]">
+      <div className="w-[60%] h-[80%] justify-between items-center flex flex-col">
+        <h1 className="text-center text-[100px] my-[-20px]">DJ Bestie</h1>
+        <h1 className="text-center text-[30px] font-sans">
+          Your AI Music Player
+        </h1>
+        <div className="h-[80%] mt-[24px] w-full border-2 border-zinc-700 rounded-[25px]"></div>
+      </div>
+      <div className="w-[38%] h-full flex flex-col gap-[24px] justify-center items-center">
+        <div className="h-[80%] w-full flex flex-col justify-between">
+          <div className="w-full h-[20%] border-2 border-zinc-700 rounded-[25px] overflow-hidden">
+            <audio ref={audioRef} autoPlay>
+              <source src="/track.mp3" type="audio/mp3" />
+              Your browser does not support the audio element.
+            </audio>
+            <canvas
+              className="w-full h-full p-[12px] flex justify-center items-center"
+              ref={canvasRef}
+            ></canvas>
+          </div>
+
+          <div className="w-full h-[26%] border-2 border-zinc-700 rounded-[25px]"></div>
+          <div className="w-full h-[48%] grid grid-cols-2 gap-[24px]">
+            <div className="w-full h-full border-2 border-zinc-700 rounded-[25px] overflow-hidden pr-[4px]">
+              <div className="rounded-t-[10px] bg-[--spotify] h-[15%] mr-[-4px] mb-[12px] p-[12px] flex items-center">
+                <h1 className="text-[0.85vw] mx-[auto]">Queue</h1>
+              </div>
+              <div className="px-[12px] pb-[12px] gap-[12px] h-[82%] flex flex-col overflow-y-scroll">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((item: any) => {
+                  return (
+                    <div
+                      className="w-full min-h-[20%] border-2 border-zinc-700 rounded-[15px] cursor-pointer hover:scale-[1.02]"
+                      key={item}
+                    ></div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="w-full h-full border-2 border-zinc-700 rounded-[25px] overflow-hidden pr-[4px]">
+              <div className="rounded-t-[10px] bg-[--spotify] h-[15%] mr-[-4px] mb-[12px] p-[12px] flex items-center">
+                <h1 className="text-[0.85vw] mx-[auto]">Similar Artists</h1>
+              </div>
+              <div className="px-[12px] pb-[12px] gap-[12px] h-[82%] flex flex-col overflow-y-scroll">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((item: any) => {
+                  return (
+                    <div
+                      className="w-full min-h-[20%] border-2 border-zinc-700 rounded-[15px] cursor-pointer hover:scale-[1.02]"
+                      key={item}
+                    ></div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
