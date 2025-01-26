@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { Unity, useUnityContext } from "react-unity-webgl";
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -129,7 +130,13 @@ export default function Home() {
     const seconds = Math.floor(time % 60).toString().padStart(2, "0");
     return `${minutes}:${seconds}`;
   };
-
+  
+  const { unityProvider, sendMessage } = useUnityContext({
+    loaderUrl: "build/Build/build.loader.js",
+    dataUrl: "build/Build/build.data",
+    frameworkUrl: "build/Build/build.framework.js",
+    codeUrl: "build/Build/build.wasm",
+  });
 
   return (
     <div className="w-screen h-screen px-[5%] flex justify-center items-center gap-[48px]">
@@ -138,8 +145,13 @@ export default function Home() {
         <h1 className="text-center text-[30px] font-sans">
           Your AI Music Companion
         </h1>
-        <div className="h-[80%] mt-[24px] w-full border-2 border-[--grey1] rounded-[25px] cursor-pointer hover:scale-[1.02]"></div>
+        <div className="h-[80%] mt-[24px] w-full border-2 border-[--grey1] rounded-[25px] cursor-pointer overflow-hidden relative">
+          <Unity unityProvider={unityProvider} style={{ width: "100%", height: "100%" }} />;
+        </div>
       </div>
+      {/* <button onClick={e => {
+        sendMessage('GameController', 'pickUpRecord');
+      }}>awopefijaewopfij</button> */}
       <div className="w-[38%] h-full flex flex-col gap-[24px] justify-center items-center">
         <div className="h-[80%] w-full flex flex-col justify-between">
           <div className="w-full h-[20%] border-2 border-[--grey1] rounded-[25px] overflow-hidden cursor-pointer hover:scale-[1.02]">
