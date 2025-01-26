@@ -59,7 +59,7 @@ def search_song(song_name, artist_name=None) -> Song:
     json_results = response.json()
     best_result = json_results.get("tracks", {}).get("items", [None])[0]
     if best_result:
-        return fill_song_schema(best_result)
+        return fill_song_class(best_result)
     else:
         return None
 
@@ -78,7 +78,7 @@ def search_artist(artist_name) -> Artist:
     json_results = response.json()
     best_result = json_results.get("artists", {}).get("items", [])[0]
     if best_result and not 'error' in best_result:
-        return fill_artist_schema(best_result)
+        return fill_artist_class(best_result)
     else:
         return None
 
@@ -139,7 +139,7 @@ def get_songs(song_names: list[str], artist_name=None) -> list[Song]:
     return results
 
 
-def fill_song_schema(song_data) -> Song:
+def fill_song_class(song_data) -> Song:
     song_name = song_data.get("name", "")
     song_id = song_data.get("id", "")
     artist_data = song_data["artists"][0]
@@ -186,7 +186,7 @@ def delete_song(song_name, artist_name = None):
         query["artist"] = artist_name
     result = songs_collection.delete_one(query)
 
-def fill_artist_schema(artist_data):
+def fill_artist_class(artist_data):
     return Artist(
         name=artist_data.get("name", ""),
         artist_profile_url=artist_data.get("images", [{}])[0].get("url", ""),
@@ -238,7 +238,7 @@ if __name__ == "__main__":
         ]
     }
     try:
-        song_object = fill_song_schema(mock_song_data)
+        song_object = fill_song_class(mock_song_data)
         print("\nPopulated Song Object:")
         print(song_object)
     except ValueError as e:
