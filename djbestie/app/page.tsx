@@ -8,11 +8,11 @@ import SpeechRecognition, {
 import { ISong, IArtist } from "./types";
 
 const sendSocket = new WebSocket("ws://localhost:5298");
-let socketSend = (data: any) => {};
-let addDjResponse = (message: string) => {};
-let setPlaylistGlobal = (songs: ISong[]) => {};
-let setFavoritesGlobal = (artists: IArtist[]) => {};
-let changeSong = (song: ISong, rating: number) => {};
+let socketSend = (data: any) => { };
+let addDjResponse = (message: string) => { };
+let setPlaylistGlobal = (songs: ISong[]) => { };
+let setFavoritesGlobal = (artists: IArtist[]) => { };
+let changeSong = (song: ISong, rating: number) => { };
 
 sendSocket.addEventListener("open", (event) => {
   console.log("send socket is open");
@@ -73,32 +73,32 @@ export default function Home() {
     // Function to draw the visualizer
     const drawVisualizer = () => {
       requestAnimationFrame(drawVisualizer);
-    
+
       analyser.getByteFrequencyData(dataArray); // Get frequency data
-    
+
       if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-    
+
       // Draw frequency bars
       const barWidth = canvas.width / (bufferLength + 15);
       let x = 0;
-    
+
       for (let i = 0; i < bufferLength; i++) {
         const barHeight = (dataArray[i]) / 2 + 6;
-    
+
         // Create a dynamic color that shifts through the hue spectrum
         const hue = (i * 360) / bufferLength; // Distribute hues across the spectrum
         const saturation = 80;  // Saturation (80% for vivid colors)
         const lightness = 50;   // Lightness (50% for a balanced brightness)
-        
+
         // Set the color using HSL
         ctx.fillStyle = `#c9a0ff`;
-    
+
         const center = canvas.height / 2;
         const barY = center - barHeight / 2; // Oscillating between top and bottom
-    
+
         ctx.beginPath();
-    
+
         // Top curve
         ctx.arc(
           x + barWidth / 2, // X position (center of the bar)
@@ -108,10 +108,10 @@ export default function Home() {
           0,                // End angle
           false             // Draw clockwise (top side)
         );
-    
+
         // Draw the right vertical line
         ctx.lineTo(x + barWidth, barY + barHeight);
-    
+
         // Bottom curve
         ctx.arc(
           x + barWidth / 2, // X position (center of the bar)
@@ -121,13 +121,13 @@ export default function Home() {
           Math.PI,          // End angle (bottom)
           false             // Draw clockwise (bottom side)
         );
-    
+
         // Draw the left vertical line
         ctx.lineTo(x, barY); // Return to the top
-    
+
         ctx.closePath();
         ctx.fill();
-    
+
         x += barWidth + 8;
       }
     };
@@ -234,7 +234,7 @@ export default function Home() {
     const seconds = Math.floor(time % 60).toString().padStart(2, "0");
     return `${minutes}:${seconds}`;
   };
-  
+
   const { unityProvider, sendMessage } = useUnityContext({
     loaderUrl: "build/Build/build.loader.js",
     dataUrl: "build/Build/build.data",
@@ -278,7 +278,7 @@ export default function Home() {
         <div className="h-[80%] mt-[24px] w-full border-2 border-[--grey1] rounded-[25px] cursor-pointer overflow-hidden relative">
           <Unity unityProvider={unityProvider} style={{ width: "100%", height: "100%" }} />;
         </div>
-        <button onClick={() => {setMuted(!isMuted)}}>{isMuted ? "Unmute" : "Mute"}</button>
+        <button onClick={() => { setMuted(!isMuted) }}>{isMuted ? "Unmute" : "Mute"}</button>
         <div>
           {(isMuted && djMessage && `DJ: ${djMessage}`) || (transcript && `User: ${transcript}`)}
         </div>
@@ -349,7 +349,7 @@ export default function Home() {
                       className="w-full min-h-[20%] border-2 border-[--grey1] rounded-[15px] cursor-pointer hover:scale-[1.02] flex"
                       key={song.id}
                     >
-                      <div className="w-auto h-full flex flex-col">
+                      <div className="w-[20%] h-full flex flex-col">
                         <img
                           src={song.album_cover_url}
                           alt={song.title}
@@ -376,7 +376,7 @@ export default function Home() {
                       className="w-full min-h-[20%] border-2 border-[--grey1] rounded-[15px] cursor-pointer hover:scale-[1.02] flex"
                       key={i}
                     >
-                      <div className="w-auto h-full flex flex-col">
+                      <div className="w-[20%] h-full flex flex-col">
                         <img
                           src={artist.artist_profile_url}
                           alt={artist.name}
