@@ -17,11 +17,6 @@ class SongRecommendation(BaseModel):
 class SongRecommendationList(BaseModel):
     song_recs: list[SongRecommendation]
 
-class CalendarEvent(BaseModel):
-    name: str
-    date: str
-    participants: list[str]
-
 class Artist(BaseModel):
     name: str
     artist_profile_url: str
