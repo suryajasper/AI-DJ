@@ -40,7 +40,6 @@ spotify_token = get_token()
 def get_auth_header():
     return {"Authorization": "Bearer " + spotify_token}
 
-
 def search_song(song_name, artist_name=None) -> Song:
     print('Requesting song', song_name, 'by', artist_name)
     song_query_str = query = f"track:{song_name}"
@@ -62,7 +61,6 @@ def search_song(song_name, artist_name=None) -> Song:
         return fill_song_class(best_result)
     else:
         return None
-
 
 def search_artist(artist_name) -> Artist:
     query = encode_query({
@@ -220,6 +218,10 @@ def fetch_preview_url(track_id) -> str:
         print(f"Error occurred: {e}")
     return ''
 
+def purge_data():
+    songs_result = songs_collection.delete_many({})
+    artists_result = artists_collection.delete_many({})
+
 def get_song_preview_url(track_id):
     # track_id = get_track_id(song_name, token, artist_name)
     preview_url = fetch_preview_url(track_id)
@@ -238,8 +240,6 @@ if __name__ == "__main__":
         ]
     }
     try:
-        song_object = fill_song_class(mock_song_data)
-        print("\nPopulated Song Object:")
-        print(song_object)
+       purge_data()
     except ValueError as e:
         print(f"Error: {e}")
