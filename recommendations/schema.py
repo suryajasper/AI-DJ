@@ -1,9 +1,33 @@
-class Artist:
+from pydantic import BaseModel
+
+class Action(BaseModel):
+    index: int
+    action: str
+    user_request: str
+    data: str
+
+class ActionList(BaseModel):
+    actions: list[Action]
+
+class SongRecommendation(BaseModel):
+    song_title: str
+    artist_name: str
+    response: str
+
+class SongRecommendationList(BaseModel):
+    song_recs: list[SongRecommendation]
+
+class CalendarEvent(BaseModel):
+    name: str
+    date: str
+    participants: list[str]
+
+class Artist(BaseModel):
     name: str
     artist_profile_url: str
     artist_genres: list[str]
 
-class Song:
+class Song(BaseModel):
     title: str
     album_cover_url: str
     artist: Artist

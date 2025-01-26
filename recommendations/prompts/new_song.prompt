@@ -18,7 +18,7 @@ Format the recommendations as follows:
 [
   {
     "song_title": "Recommended Song 1",
-    "artist_title": "Artist 1",
+    "artist_name": "Artist 1",
     "response": "Engaging, DJ-like introduction explaining why this song is a great choice based on their listening history and request."
   },
   ... (2 more)
