@@ -2,24 +2,42 @@ You are an AI DJ who should recommend the next song based on a user's listening 
 
 ### **Context:**
 The user has listened to the following songs so far. These are provided along with their reactions:
-- Song "Watermelon Sugar" by Harry Styles -- user reacted, "User is neutral about this"
-- Song "Riptide" by Vance Joy -- user reacted, "User liked this"
-- Song "Ophelia" by The Lumineers -- user reacted, "User liked this"
-- Song "Budapest" by George Ezra -- user reacted, "User liked this"
-- Song "Stolen Dance" by Milky Chance -- user reacted, "User liked this"
-- Song "Cherry Wine - Live" by Hozier -- user reacted, "User liked this"
+- Song "The Night We Met" by Lord Huron -- user reacted, "User is neutral about this"
+- Song "HUMBLE." by Kendrick Lamar -- user reacted, "User liked this"
+- Song "All The Stars (with SZA)" by Kendrick Lamar -- user reacted, "User is neutral about this"
+- Song "Juicy - 2005 Remaster" by The Notorious B.I.G. -- user reacted, "User liked this"
+- Song "Mere Rashke Qamar" by Nusrat Fateh Ali Khan -- user reacted, "User is neutral about this"
+- Song "Malare Maunama (From “Karna”)" by S. P. Balasubrahmanyam -- user reacted, "User liked this"
+- Song "Pursuit Of Happiness (Nightmare)" by Kid Cudi -- user reacted, "User liked this"
+- Song "goosebumps" by Travis Scott -- user reacted, "User is neutral about this"
+- Song "Location" by Khalid -- user reacted, "User liked this"
+- Song "Still D.R.E." by Dr. Dre -- user reacted, "User liked this"
+- Song "Gin and Juice" by Snoop Dogg -- user reacted, "User liked this"
+- Song "Uptown Funk (feat. Bruno Mars)" by Mark Ronson -- user reacted, "User is neutral about this"
+- Song "Come Down" by Anderson .Paak -- user reacted, "User liked this"
+- Song "Best Part (feat. H.E.R.)" by Daniel Caesar -- user reacted, "User liked this"
+- Song "Electric Feel" by MGMT -- user reacted, "User liked this"
+- Song "The Next Episode" by Dr. Dre -- user reacted, "User is neutral about this"
+- Song "Mo Money Mo Problems (feat. Puff Daddy & Mase) - 2014 Remaster" by The Notorious B.I.G. -- user reacted, "User liked this"
+- Song "Come Through (feat. Chris Brown)" by H.E.R. -- user reacted, "User is neutral about this"
+- Song "Talk (feat. Disclosure)" by Khalid -- user reacted, "User liked this"
+- Song "DNA." by Kendrick Lamar -- user reacted, "User is neutral about this"
+- Song "All Falls Down" by Kanye West -- user reacted, "User is neutral about this"
+- Song "SICKO MODE" by Travis Scott -- user reacted, "User liked this"
+- Song "L$D" by A$AP Rocky -- user reacted, "User liked this"
+- Song "Feel Good Inc." by Gorillaz -- user reacted, "User is neutral about this"
 
 The most recent song they were listening to when they requested a new song:
-- Title: Cherry Wine - Live 
-- Artist Name: Hozier 
+- Title: Feel Good Inc. 
+- Artist Name: Gorillaz 
 - Artist Genres:  
-- Album Name: Hozier (Expanded Edition) 
+- Album Name: Demon Days 
 - Genres:  
 - Moods:  
 
 
 ### **User Request:**
-The user said: "even sadder and more underground."
+The user said: "change the track"
 
 This request provides context about their current mood, preferences, or specific desires for the next song. Choose 3 new songs accordingly. If they requested a specific song, you must include this song as the first in the list. Do not recommend or choose songs that are in the history.
 

@@ -1,130 +1,58 @@
+from vision import MoodAnalyzer
+from speech_analysis.speech_to_text import SpeechToTextLoop
+from recommendations.recommend import RecommendationPipeline
 import cv2
-import numpy as np
-import mediapipe as mp
-from deepface import DeepFace
-import speech_recognition as sr
-import whisper
-import torch
+import json
+import asyncio
+import websockets
 from queue import Queue
 from threading import Thread
 from time import sleep
-import os
 
+# Shared queue for communication
+request_queue = asyncio.Queue()
 
-# Define the Speech-to-Text class
-class SpeechToTextLoop:
-    def __init__(self, queue, model='tiny.en', energy_threshold=600, record_timeout=2, phrase_timeout=20):
-        self.queue = queue
-        self.phrase_time = None
-        self.data_queue = Queue()
-        self.transcription = []
-
-        print("Loading Whisper model...")
-        self.audio_model = whisper.load_model(model)
-        print("Model loaded successfully!")
-
-        self.recorder = sr.Recognizer()
-        self.recorder.energy_threshold = energy_threshold
-        self.recorder.dynamic_energy_threshold = False
-        self.source = sr.Microphone(sample_rate=16000)
-
-        self.record_timeout = record_timeout
-        self.phrase_timeout = phrase_timeout
-
-        with self.source:
-            self.recorder.adjust_for_ambient_noise(self.source)
-
-        def record_callback(_, audio: sr.AudioData):
-            data = audio.get_raw_data()
-            self.data_queue.put(data)
-
-        self.recorder.listen_in_background(
-            self.source, record_callback, phrase_time_limit=record_timeout
-        )
-
-    def transcribe_audio(self):
+async def websocket_handler(websocket):
+    """ Handles incoming WebSocket connections and requests """
+    print('WebSocket connection established')
+    
+    try:
         while True:
-            if not self.data_queue.empty():
-                audio_data = b''.join(self.data_queue.queue)
-                self.data_queue.queue.clear()
+            message = await websocket.recv()
+            message = json.loads(message)
+            print(f"Received user request: {message}")
 
-                audio_np = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+            # Add user request to queue for processing
+            await request_queue.put((websocket, message))
+    except websockets.exceptions.ConnectionClosed:
+        print("WebSocket connection closed.")
 
-                if np.max(audio_np) < 0.01:
-                    print("Skipping silent audio...")
-                    continue
-
-                result = self.audio_model.transcribe(audio_np, fp16=torch.cuda.is_available(), language="en")
-                text = result['text'].strip()
-                print(f"Transcription: {text}")
-                self.queue.put({'source': 'audio', 'data': text})
-
-
-# Define the MoodAnalyzer class
-class MoodAnalyzer:
-    def __init__(self):
-        # My Mediapipe 
-        self.mp_face = mp.solutions.face_detection
-        self.mp_pose = mp.solutions.pose
-        self.mp_drawing = mp.solutions.drawing_utils
-        # My detectors
-        self.face_detection = self.mp_face.FaceDetection(min_detection_confidence=0.5) 
-        self.pose_detection = self.mp_pose.Pose(min_detection_confidence=0.5)
-        self.previous_pose_landmarks = None
-
-    def analyze_emotions(self, frame):                      
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        rgb_frame = cv2.cvtColor(gray_frame, cv2.COLOR_GRAY2RGB)
-
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-        for (x, y, w, h) in faces:
-            face_roi = rgb_frame[y:y + h, x:x + w]
-            try:
-                result = DeepFace.analyze(face_roi, actions=['emotion'], enforce_detection=False)
-                dominant_emotion = result[0]['dominant_emotion']
-                return dominant_emotion
-            except Exception:
-                continue
+async def run_recommendation_engine():
+    """ Processes user requests and sends back recommendations """
+    rec_pipe = RecommendationPipeline()
+    
+    while True:
+        websocket, recv_packet = await request_queue.get()  # Wait for new request
         
-        return "neutral"
-
-    def calculate_motion_rate(self, current_landmarks): 
-        if not current_landmarks or self.previous_pose_landmarks is None:
-            self.previous_pose_landmarks = current_landmarks
-            return 0 
-
-        motion_rate = 0
-        for i, current_landmark in enumerate(current_landmarks.landmark):
-            previous_landmark = self.previous_pose_landmarks.landmark[i]
-
-            distance = np.sqrt(                                
-                (current_landmark.x - previous_landmark.x) ** 2 +
-                (current_landmark.y - previous_landmark.y) ** 2 +
-                (current_landmark.z - previous_landmark.z) ** 2
-            )
-            motion_rate += distance
-        self.previous_pose_landmarks = current_landmarks
-        return motion_rate / len(current_landmarks.landmark)
-
-    def process_frame(self, frame):                            
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)         
-        emotion = self.analyze_emotions(frame)                 
-        pose_results = self.pose_detection.process(rgb_frame)   
-                                                                
-        motion_rate = self.calculate_motion_rate(pose_results.pose_landmarks) if pose_results.pose_landmarks else 0
-        display_text = f"Emotion: {emotion} | Motion Rate: {motion_rate:.2f}"
-        cv2.putText(frame, display_text, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+        print('Received', recv_packet)
         
-        if pose_results.pose_landmarks:
-            self.mp_drawing.draw_landmarks(frame, pose_results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS)
-        
-        return frame, emotion, motion_rate
+        if 'type' in recv_packet and recv_packet['type'] == 'user_request':
+            print("Processing user request...")
+            user_request = recv_packet['content']
+            packets_to_send = rec_pipe.process_request(user_request)
 
+            for packet in packets_to_send:
+                await websocket.send(json.dumps(packet))
+            print(f"Sent {len(packets_to_send)} actions to frontend")
 
-# Function to run face recognition
+async def start_websocket_server():
+    """ Start WebSocket server """
+    print('Starting WebSocket server...')
+    async with websockets.serve(websocket_handler, "localhost", 5298):
+        await asyncio.Future()  # Keeps server running indefinitely
+
 def run_face_recognition(queue):
+    """ Captures video feed and processes face recognition & mood detection """
     mood_analyzer = MoodAnalyzer()
     cap = cv2.VideoCapture(0)
     transcription = ""
@@ -134,16 +62,13 @@ def run_face_recognition(queue):
         if not ret:
             print("Failed to capture frame")
             break
-
-        # Check for new transcription in the queue
+        
         if not queue.empty():
             data = queue.get()
             transcription = data.get('data', '')
 
-        # Process the frame
         processed_frame, emotion, motion_rate = mood_analyzer.process_frame(frame)
 
-        # Overlay transcription on the frame
         cv2.putText(
             processed_frame,
             f"Speech: {transcription}",
@@ -164,32 +89,21 @@ def run_face_recognition(queue):
     cap.release()
     cv2.destroyAllWindows()
 
-
-# Function to run speech-to-text
-def run_speech_to_text(queue):
-    stt = SpeechToTextLoop(queue)
-    stt.transcribe_audio()
-
-
-# Main function to run both concurrently
 def main():
     queue = Queue()
 
-    # Start threads for face recognition and speech-to-text
-    face_thread = Thread(target=run_face_recognition, args=(queue,), daemon=True)
-    stt_thread = Thread(target=run_speech_to_text, args=(queue,), daemon=True)
+    # Run face recognition in a separate thread
+    # face_thread = Thread(target=run_face_recognition, args=(queue,), daemon=True)
+    # face_thread.start()
 
-    face_thread.start()
-    stt_thread.start()
+    # Run the WebSocket server & recommendation engine in an asyncio loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-    print("Both models are running. Press 'q' to quit the face recognition window.")
+    websocket_server = start_websocket_server()
+    recommendation_task = run_recommendation_engine()
 
-    try:
-        while True:
-            sleep(0.1)
-    except KeyboardInterrupt:
-        print("\nStopping models...")
-
+    loop.run_until_complete(asyncio.gather(websocket_server, recommendation_task))
 
 if __name__ == "__main__":
     main()
