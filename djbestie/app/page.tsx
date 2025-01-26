@@ -159,7 +159,7 @@ export default function Home() {
 
   const [isMuted, setMuted] = useState(true);
   const [djMessage, setDjMessage] = useState("");
-
+  
   addDjResponse = (message: string) => {
     setDjMessage(message.slice(0, 250));
   };
@@ -240,22 +240,45 @@ export default function Home() {
   } = useSpeechRecognition();
 
   useEffect(() => {
-    if (isMuted) {
-      SpeechRecognition.stopListening();
-      if (transcript) {
-        socketSend({
-          type: "user_request",
-          content: transcript,
-        });
-      }
+    SpeechRecognition.startListening({ continuous: true }); 
+  }, [])
+
+  useEffect(() => {
+    let transcriptWords = transcript.split(' ');
+    let lastWord = transcriptWords[transcriptWords.length - 1].toLowerCase();
+    if (isMuted && (lastWord === "dj" || lastWord == "bestie" || lastWord == "dave")) {
       resetTranscript();
+      SpeechRecognition.startListening({ continuous: true }); 
+      setMuted(false);
     }
-    else {
+    else if (!isMuted && lastWord === "thanks") {
+      setMuted(true);
+      socketSend({
+        type: "user_request",
+        content: transcript,
+      });
       resetTranscript();
-      setDjMessage("");
-      SpeechRecognition.startListening({ continuous: true });
+      SpeechRecognition.startListening({ continuous: true }); 
     }
-  }, [isMuted])
+  }, [transcript]);
+
+  // useEffect(() => {
+  //   if (isMuted) {
+  //     // SpeechRecognition.stopListening();
+  //     if (transcript) {
+  //       socketSend({
+  //         type: "user_request",
+  //         content: transcript,
+  //       });
+  //     }
+  //     resetTranscript();
+  //   }
+  //   else {
+  //     resetTranscript();
+  //     setDjMessage("");
+  //     SpeechRecognition.startListening({ continuous: true });
+  //   }
+  // }, [isMuted])
 
   return (
     <div className="w-screen h-screen px-[5%] flex justify-center items-center gap-[48px]">
@@ -269,7 +292,7 @@ export default function Home() {
         </div>
         <button onClick={() => { setMuted(!isMuted) }}>{isMuted ? "Unmute" : "Mute"}</button>
         <div>
-          {(isMuted && djMessage && `DJ: ${djMessage}`) || (transcript && `User: ${transcript}`)}
+          {(isMuted && djMessage && `DJ: ${djMessage}`) || (transcript && `User: ${transcript.slice(-250)}`)}
         </div>
       </div>
       <div className="w-[38%] h-full flex flex-col gap-[24px] justify-center items-center">

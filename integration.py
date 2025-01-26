@@ -93,8 +93,8 @@ def main():
     queue = Queue()
 
     # Run face recognition in a separate thread
-    # face_thread = Thread(target=run_face_recognition, args=(queue,), daemon=True)
-    # face_thread.start()
+    face_thread = Thread(target=run_face_recognition, args=(queue,), daemon=True)
+    face_thread.start()
 
     # Run the WebSocket server & recommendation engine in an asyncio loop
     loop = asyncio.new_event_loop()

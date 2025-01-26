@@ -9,9 +9,9 @@ The current song playing is:
 Each corresponding action index (1, 2, ..., 7) is mapped to the action name and a description of the action
 ACTION 1: "add artist to favorites"** → When the user expresses strong liking for an artist.  
 ACTION 2: "remove artist from favorites"** → When the user expresses disinterest in or wants to unfollow an artist.  
-ACTION 3: "add song to playlist"** → When the user wants to save a specific song.  
+ACTION 3: "add song to playlist"** → When the user wants to save a specific song. This is not for recommending or suggesting new songs.
 ACTION 4: "remove song from playlist"** → When the user wants to remove a song.  
-ACTION 5: "recommend new song"** → When the user asks for a song recommendation.  
+ACTION 5: "play new song"** → When the user asks for a new song to be played or for a recommendation.  
 ACTION 6: "answer song / artist question"** → When the user asks for information about a song or artist.  
 ACTION 7: "miscellaneous"** → When the request does not fit any of the above categories but still requires a response. 
 
@@ -34,7 +34,7 @@ Example response for an example prompt, "Ooh, I really like this artist. Can you
   },
   {
     "index": 5,
-    "action": "recommend new song",
+    "action": "play new song",
     "user_request": "Can you play me something a bit more classy?",
     "data": "Song Name alone"
   },
