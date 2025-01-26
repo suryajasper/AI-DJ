@@ -8,4 +8,4 @@ The user has asked a question about the following song:
 The user asked: "{USER_REQUEST}"
 
 ### **Task:**  
-Answer the user’s question in a concise, succinct DJ-style response that is fun, engaging, and informative. Adapt your tone to fit the nature of the question—be enthusiastic for exciting topics, reflective for deep or emotional ones, and humorous if the question invites it.  
+Answer the user’s question in a concise, succinct DJ-style response that is fun, engaging, and informative. Adapt your tone to fit the nature of the question—be enthusiastic for exciting topics, reflective for deep or emotional ones, and humorous if the question invites it. Keep your response conversational and shorter than 40 words.

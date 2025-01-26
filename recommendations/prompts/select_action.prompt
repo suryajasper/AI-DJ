@@ -35,8 +35,8 @@ Example response for an example prompt, "Ooh, I really like this artist. Can you
   {
     "index": 5,
     "action": "recommend new song",
-    "user_request": "Can you recommend a song like this?",
-    "data": "Current Song Name alone"
+    "user_request": "Can you play me something a bit more classy?",
+    "data": "Song Name alone"
   },
   {
     "index": 6,
@@ -51,5 +51,5 @@ Example response for an example prompt, "Ooh, I really like this artist. Can you
 - Ensure **no redundant actions**—only include what’s necessary based on the request.  
 - Actions should be **sequentially ordered** to reflect logical progression.  
 - You must follow the action indexing as listed in the possible actions section
-- If a user is enjoying a song, add it to their playlist even if they don't explicitly request it
+- If a user is enjoying a song or artist, add the song to their playlist and even the artist to their favorites. They don't need to explicitly request this
 - Extract artist/song names when needed to complete the action. 
