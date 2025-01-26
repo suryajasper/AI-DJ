@@ -12,7 +12,7 @@ let socketSend = (data: any) => {};
 let addDjResponse = (message: string) => {};
 let setPlaylistGlobal = (songs: ISong[]) => {};
 let setFavoritesGlobal = (artists: IArtist[]) => {};
-let changeSong = (song: ISong) => {};
+let changeSong = (song: ISong, rating: number) => {};
 
 sendSocket.addEventListener("open", (event) => {
   console.log("send socket is open");
@@ -36,7 +36,7 @@ sendSocket.addEventListener("message", (event) => {
     setFavoritesGlobal(data.content as IArtist[]);
   }
   else if (data.type == "change_song") {
-    changeSong(data.content as ISong);
+    changeSong(data.content.song as ISong, data.content.speed_rating);
   }
 });
 
@@ -172,17 +172,16 @@ export default function Home() {
   const [djMessage, setDjMessage] = useState("");
 
   addDjResponse = (message: string) => {
-    setDjMessage(message.slice(0, 150));
+    setDjMessage(message.slice(0, 250));
   };
   setPlaylistGlobal = (newPlaylist: ISong[]) => {
     setPlaylist(newPlaylist);
   };
   setFavoritesGlobal = (newFavorites: IArtist[]) => {
-    console.log('MONKEY GEORGE BITCH WHORE');
     setFavoriteArtists(newFavorites);
   };
-  changeSong = (song: ISong) => {
-    sendMessage('GameController', 'setSpeed', getRandomInt(1, 5));
+  changeSong = (song: ISong, rating: number) => {
+    sendMessage('GameController', 'setSpeed', rating);
     sendMessage('GameController', 'pickUpRecord');
     setCurrentSong(song);
 

@@ -1,5 +1,8 @@
 from pydantic import BaseModel
 
+class SpeedRating(BaseModel):
+    rating: int
+
 class Action(BaseModel):
     index: int
     action: str
