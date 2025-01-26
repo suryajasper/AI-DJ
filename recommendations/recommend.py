@@ -46,17 +46,22 @@ class RecommendationPipeline:
         })
         with open('shit.txt', 'w') as out:
             out.write(new_song_prompt.get_content())
+            
         response = self.llm.request('You are an AI Music DJ', new_song_prompt.get_content(), output_schema=SongRecommendationList)
         best_song: SongRecommendation = response['song_recs'][0]
-        new_song = search_song(best_song.song_title, best_song.artist_name)
-        new_song.user_reaction = 'User is neutral about this'
-        if new_song:
+        
+        found_song = False
+        try:
+            new_song = search_song(best_song.song_title, best_song.artist_name)
+            new_song.user_reaction = 'User is neutral about this'
             self.history.append(new_song)
-            self.current_song = new_song
+            self.current_song = new_song 
             print(best_song.response)
-        else:
+            return self.current_song
+
+        except Exception as e:
             print(f'Could not find song "{best_song.song_title}" by {best_song.artist_name}')
-        return self.current_song
+            return self.recommend_song(request)      
     
     def answer_question(self, request: str) -> str:
         song_question_prompt = Prompt('song_question', data={
