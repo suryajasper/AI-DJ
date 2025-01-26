@@ -1,5 +1,7 @@
 from pymongo import MongoClient
 songSchema = {
+    "id":str,
+    "preview_url": str,
     "album_cover_url":str,
     "title":str,
     "artist_name":str,

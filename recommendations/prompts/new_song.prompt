@@ -10,7 +10,7 @@ The most recent song they were listening to when they requested a new song:
 ### **User Request:**
 The user said: "{USER_REQUEST}"
 
-This request provides context about their current mood, preferences, or specific desires for the next song. Choose 3 songs accordingly. If they requested a specific song, you must include this song as the first in the list.
+This request provides context about their current mood, preferences, or specific desires for the next song. Choose 3 new songs accordingly. If they requested a specific song, you must include this song as the first in the list.
 
 ### **Task & Output Format:**
 Recommend three songs based on the user's listening history, reactions, and their most recent request. Don't include featured artists in your output, only the main artist.

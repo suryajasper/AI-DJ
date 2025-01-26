@@ -44,6 +44,8 @@ class RecommendationPipeline:
             'SONG_LIST': previous_songs,
             'CURRENT_SONG_DESCRIPTION': self.get_current_song_desc(),
         })
+        with open('shit.txt', 'w') as out:
+            out.write(new_song_prompt.get_content())
         response = self.llm.request('You are an AI Music DJ', new_song_prompt.get_content(), output_schema=SongRecommendationList)
         best_song: SongRecommendation = response['song_recs'][0]
         new_song = search_song(best_song.song_title, best_song.artist_name)

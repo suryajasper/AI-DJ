@@ -5,10 +5,19 @@ import requests
 import os
 import base64
 import json
+from bs4 import BeautifulSoup
+from jsonpath_ng import parse
+from pymongo import MongoClient
 
 load_dotenv()
 spotify_client_id = os.getenv("CLIENT_ID")
 spotify_client_secret = os.getenv("CLIENT_SECRET")
+mongodb_password = os.getenv("MONGODB_PASSWORD")
+
+client = MongoClient(f"mongodb+srv://georgemathew9203:{mongodb_password}@djbestie.cfczo.mongodb.net/?retryWrites=true&w=majority")
+db = client.my_database
+songs_collection = db.songs
+artists_collection = db.artists
 
 def get_token():
     auth_string = spotify_client_id + ":" + spotify_client_secret
@@ -28,23 +37,20 @@ def get_token():
     return token
 
 spotify_token = get_token()
-
 def get_auth_header():
     return {"Authorization": "Bearer " + spotify_token}
 
-#print(token)
 
 def search_song(song_name, artist_name=None) -> Song:
+    print('Requesting song', song_name, 'by', artist_name)
     song_query_str = query = f"track:{song_name}"
     if artist_name:
         song_query_str += f" artist:{artist_name}"
-
     query = encode_query({
         "q": song_query_str,
         "type": "track",
         "limit": 1
     })
-    
     url = f"https://api.spotify.com/v1/search?{query}"
     headers = get_auth_header()
     response = requests.get(url, headers=headers)
@@ -77,12 +83,12 @@ def search_artist(artist_name) -> Artist:
         return None
 
 def populate_song_schema(song_data):
-    """
-    Populate the song schema using data from Spotify.
-    """
+    song_name = song_data["name"]
+    song_id = song_data["id"]
+    artist_name = song_data["artists"][0]["name"]
+    preview_url = get_song_preview_url(song_id)
     if "error" in song_data:
         return {"error": "Cannot populate song schema. Song data is invalid."}
-
     album_cover_url = song_data["album"]["images"][0]["url"]
     title = song_data["name"]
     artist_name = song_data["artists"][0]["name"]
@@ -90,8 +96,9 @@ def populate_song_schema(song_data):
     song_genres = []
     song_moods = ["Happy", "Relaxed"]
     user_reaction = "Loved it!"
-
     song_schema = {
+        "id": song_id,
+        "preview_url": preview_url,
         "album_cover_url": album_cover_url,
         "title": title,
         "artist_name": artist_name,
@@ -105,11 +112,9 @@ def populate_song_schema(song_data):
 def populate_artist_schema(artist_data):
     if "error" in artist_data:
         return {"error": "Cannot populate artist schema. Artist data is invalid."}
-
     artist_profile_url = artist_data["images"][0]["url"] if artist_data.get("images") else None
     name = artist_data["name"]
     artist_genre = artist_data.get("genres", [])
-
     artist_schema = {
         "artist_profile_url": artist_profile_url,
         "name": name,
@@ -128,7 +133,6 @@ def get_songs(song_names: list[str], artist_name=None) -> list[Song]:
                 results.append(None)
                 continue
             results.append(song)
-
         except Exception as e:
             print(e)
             results.append(None)
@@ -136,11 +140,15 @@ def get_songs(song_names: list[str], artist_name=None) -> list[Song]:
 
 
 def fill_song_schema(song_data) -> Song:
+    song_name = song_data.get("name", "")
+    song_id = song_data.get("id", "")
     artist_data = song_data["artists"][0]
     artist_name = artist_data.get("name", "")
     artist = search_artist(artist_name)
-
+    preview_url = get_song_preview_url(song_id)
     return Song(
+        id=song_id,
+        preview_url=preview_url,
         title=song_data.get("name", ""),
         album_cover_url=song_data.get("album", {}).get("images", [{}])[0].get("url", ""),
         artist=artist,
@@ -162,21 +170,80 @@ def get_artists(artist_names):
             results.append(artist)
     return results
 
+def add_song(song_name, artist_name = None):
+    song_data = search_song(song_name, spotify_token, artist_name)
+    song_schema = populate_song_schema(song_data)
+    result = songs_collection.insert_one(song_schema)
+
+def add_artist( artist_name):
+    artist_data = search_artist(artist_name, spotify_token)
+    artist_schema = populate_artist_schema(artist_data)
+    result = artists_collection.insert_one(artist_schema)
+    
+def delete_song(song_name, artist_name = None):
+    query = {"name": song_name}
+    if artist_name:
+        query["artist"] = artist_name
+    result = songs_collection.delete_one(query)
+
 def fill_artist_schema(artist_data):
     return Artist(
         name=artist_data.get("name", ""),
         artist_profile_url=artist_data.get("images", [{}])[0].get("url", ""),
         artist_genres=artist_data.get("genres", [])
     )
+ 
+def get_track_id(song_name, artist_name = None):
+    query = f"track:{song_name}"
+    if artist_name:
+        query += f" artist:{artist_name}"
+    url = f"https://api.spotify.com/v1/search?q={query}&type=track&limit=1"
+    headers = {"Authorization": f"Bearer {spotify_token}"}
 
-if __name__ == '__main__':
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        results = response.json()
+        items = results.get("tracks", {}).get("items", [])
+    return items[0].get("id")
+
+def fetch_preview_url(track_id) -> str:
+    embed_url = f"https://open.spotify.com/embed/track/{track_id}"
     try:
-        artist_list = ["Ed Sheeran", "The Weeknd", "Queen"]
-        artists = get_artists(artist_list)
-        print("Artists Details:", artists)
-
-        song_list = ['Blacker the Berry', 'Good Kid', 'PRIDE']
-        songs = get_songs(song_list, 'Kendrick Lamar')
-        print('Song Details:', songs)
+        response = requests.get(embed_url)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, "html.parser")
+            next_data_script = soup.find("script", {"id": "__NEXT_DATA__"})
+            if next_data_script:
+                json_data = json.loads(next_data_script.string)
+                return json_data["props"]["pageProps"]["state"]["data"]["entity"]["audioPreview"]["url"]
     except Exception as e:
-        print(e)
+        print(f"Error occurred: {e}")
+    return ''
+
+def get_song_preview_url(track_id):
+    # track_id = get_track_id(song_name, token, artist_name)
+    preview_url = fetch_preview_url(track_id)
+    return preview_url
+
+if __name__ == "__main__":
+    mock_song_data = {
+        "id": "0VjIjW4GlUZAMYd2vXMi3b",
+        "name": "Blinding Lights",
+        "album": {
+            "name": "After Hours",
+            "images": [{"url": "https://i.scdn.co/image/ab67616d00001e02c74f42c430637b44e48d6e7c"}]
+        },
+        "artists": [
+            {"name": "The Weeknd", "id": "1Xyo4u8uXC1ZmMpatF05PJ"}
+        ]
+    }
+    try:
+        song_object = fill_song_schema(mock_song_data)
+        print("\nPopulated Song Object:")
+        print(song_object)
+    except ValueError as e:
+        print(f"Error: {e}")
+
+    
+
+

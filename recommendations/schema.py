@@ -23,6 +23,8 @@ class Artist(BaseModel):
     artist_genres: list[str]
 
 class Song(BaseModel):
+    id: str
+    preview_url: str
     title: str
     album_cover_url: str
     artist: Artist
