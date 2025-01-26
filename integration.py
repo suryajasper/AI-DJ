@@ -13,7 +13,7 @@ import os
 
 # Define the Speech-to-Text class
 class SpeechToTextLoop:
-    def __init__(self, queue, model='tiny.en', energy_threshold=600, record_timeout=1, phrase_timeout=5):
+    def __init__(self, queue, model='tiny.en', energy_threshold=600, record_timeout=2, phrase_timeout=20):
         self.queue = queue
         self.phrase_time = None
         self.data_queue = Queue()
