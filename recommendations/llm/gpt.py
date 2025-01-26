@@ -11,7 +11,7 @@ class GPT:
     def request(self, role : str, prompt : str, output_schema: BaseModel = None) -> Union[str, dict]:
         response_format = output_schema if output_schema else {"type": "text"}
 
-        response = self.client.chat.completions.create(
+        response = self.client.beta.chat.completions.parse(
             model=self.model_id,
             messages=[
                 {"role": "system", "content": role},

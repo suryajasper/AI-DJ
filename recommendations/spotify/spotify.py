@@ -1,16 +1,17 @@
 from recommendations.schema import Song, Artist
 from dotenv import load_dotenv
+from urllib.parse import urlencode as encode_query
 import requests
 import os
 import base64
 import json
 
 load_dotenv()
-client_id = os.getenv("CLIENT_ID")
-client_secret = os.getenv("CLIENT_SECRET")
+spotify_client_id = os.getenv("CLIENT_ID")
+spotify_client_secret = os.getenv("CLIENT_SECRET")
 
 def get_token():
-    auth_string = client_id + ":" + client_secret
+    auth_string = spotify_client_id + ":" + spotify_client_secret
     auth_bytes = auth_string.encode("utf-8")
     auth_base64 = str(base64.b64encode(auth_bytes), "utf-8")
     
@@ -26,33 +27,54 @@ def get_token():
 
     return token
 
-def get_auth_header(token):
-    return {"Authorization": "Bearer " + token}
+spotify_token = get_token()
 
-token = get_token()
+def get_auth_header():
+    return {"Authorization": "Bearer " + spotify_token}
+
 #print(token)
 
-def search_song(song_name, token, artist_name=None):
-    query = f"track:{song_name}"
+def search_song(song_name, artist_name=None) -> Song:
+    song_query_str = query = f"track:{song_name}"
     if artist_name:
-        query += f" artist:{artist_name}"
-    url = f"https://api.spotify.com/v1/search?q={query}&type=track&limit=1"
-    headers = get_auth_header(token)
+        song_query_str += f" artist:{artist_name}"
+
+    query = encode_query({
+        "q": song_query_str,
+        "type": "track",
+        "limit": 1
+    })
+    
+    url = f"https://api.spotify.com/v1/search?{query}"
+    headers = get_auth_header()
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         return {"error": response.content}
     json_results = response.json()
-    return json_results.get("tracks", {}).get("items", [None])[0]
+    best_result = json_results.get("tracks", {}).get("items", [None])[0]
+    if best_result:
+        return fill_song_schema(best_result)
+    else:
+        return None
 
 
-def search_artist(artist_name, token):
-    url = f"https://api.spotify.com/v1/search?q={artist_name}&type=artist&limit=1"
-    headers = get_auth_header(token)
+def search_artist(artist_name) -> Artist:
+    query = encode_query({
+        "q": artist_name,
+        "type": "artist",
+        "limit": 1
+    })
+    url = f"https://api.spotify.com/v1/search?{query}"
+    headers = get_auth_header()
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
         return {"error": response.content}
     json_results = response.json()
-    return json_results.get("artists", {}).get("items", [])[0]
+    best_result = json_results.get("artists", {}).get("items", [])[0]
+    if best_result and not 'error' in best_result:
+        return fill_artist_schema(best_result)
+    else:
+        return None
 
 def populate_song_schema(song_data):
     """
@@ -95,18 +117,17 @@ def populate_artist_schema(artist_data):
     }
     return artist_schema
 
-def get_songs(song_names, token, artist_name=None) -> list[Song]:
+def get_songs(song_names: list[str], artist_name=None) -> list[Song]:
     if isinstance(song_names, str):
         song_names = [song_names]
     results: list[Song] = []
     for song_name in song_names:
         try:
-            song_data = search_song(song_name, token, artist_name)
-            if not song_data:
-                print('shit')
+            song = search_song(song_name, artist_name)
+            if not song:
                 results.append(None)
                 continue
-            results.append(fill_song_schema(song_data))
+            results.append(song)
 
         except Exception as e:
             print(e)
@@ -116,36 +137,29 @@ def get_songs(song_names, token, artist_name=None) -> list[Song]:
 
 def fill_song_schema(song_data) -> Song:
     artist_data = song_data["artists"][0]
-    artist_id = artist_data.get("id", "")
     artist_name = artist_data.get("name", "")
-    artist_details = search_artist(artist_name, token)
-    artist_genres = artist_details.get("genres", []) if artist_details else []
+    artist = search_artist(artist_name)
 
-    artist = Artist(
-        name=artist_data.get("name", ""),
-        artist_profile_url=artist_data.get("external_urls", {}).get("spotify", ""),
-        artist_genres= artist_genres,
-    )
     return Song(
         title=song_data.get("name", ""),
         album_cover_url=song_data.get("album", {}).get("images", [{}])[0].get("url", ""),
         artist=artist,
         album_name=song_data.get("album", {}).get("name", ""),
-        song_genres= artist_genres,
+        song_genres=artist.artist_genres,
         song_moods=[],
         user_reaction=''
     )
 
-def get_artists(artist_names, token):
+def get_artists(artist_names):
     if isinstance(artist_names, str):
         artist_names = [artist_names]
     results = []
     for artist_name in artist_names:
-        artist_data = search_artist(artist_name, token)
-        if not artist_data or "error" in artist_data:
+        artist = search_artist(artist_name)
+        if not artist:
             results.append({"error": f"Artist '{artist_name}' not found."})
         else:
-            results.append(fill_artist_schema(artist_data))
+            results.append(artist)
     return results
 
 def fill_artist_schema(artist_data):
@@ -155,14 +169,14 @@ def fill_artist_schema(artist_data):
         artist_genres=artist_data.get("genres", [])
     )
 
-try:
-    token = get_token()
-    artist_list = ["Ed Sheeran", "The Weeknd", "Queen"]
-    artists = get_artists(artist_list, token)
-    print("Artists Details:", artists)
-except Exception as e:
-    print(e)
+if __name__ == '__main__':
+    try:
+        artist_list = ["Ed Sheeran", "The Weeknd", "Queen"]
+        artists = get_artists(artist_list)
+        print("Artists Details:", artists)
 
-
-
-
+        song_list = ['Blacker the Berry', 'Good Kid', 'PRIDE']
+        songs = get_songs(song_list, 'Kendrick Lamar')
+        print('Song Details:', songs)
+    except Exception as e:
+        print(e)
