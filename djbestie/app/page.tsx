@@ -35,11 +35,11 @@ export default function Home() {
       ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
       // Draw frequency bars
-      const barWidth = canvas.width / bufferLength;
+      const barWidth = canvas.width / (bufferLength + 15);
       let x = 0;
 
       for (let i = 0; i < bufferLength; i++) {
-        const barHeight = Math.sqrt(dataArray[i]) * 3.5 + 6;
+        const barHeight = Math.sqrt(dataArray[i]) * 6 + 6;
         const r = 255;
         const g = 255;
         const b = 255;
@@ -48,8 +48,38 @@ export default function Home() {
         const center = canvas.height / 2;
         const barY = center - barHeight / 2; // Oscillating between top and bottom
 
-        ctx.fillRect(x, barY, barWidth, barHeight);
-        x += barWidth + 1;
+        ctx.beginPath();
+
+        // Top curve
+        ctx.arc(
+          x + barWidth / 2, // X position (center of the bar)
+          barY,             // Y position (top of the bar)
+          barWidth / 2,           // Radius for top curve
+          Math.PI,          // Start angle
+          0,                // End angle
+          false             // Draw clockwise (top side)
+        );
+
+        // Draw the right vertical line
+        ctx.lineTo(x + barWidth, barY + barHeight);
+
+        // Bottom curve
+        ctx.arc(
+          x + barWidth / 2, // X position (center of the bar)
+          barY + barHeight, // Y position (bottom of the bar)
+          barWidth / 2,           // Radius for bottom curve
+          0,                // Start angle (bottom)
+          Math.PI,          // End angle (bottom)
+          false             // Draw clockwise (bottom side)
+        );
+
+        // Draw the left vertical line
+        ctx.lineTo(x, barY); // Return to the top
+
+        ctx.closePath();
+        ctx.fill();
+
+        x += barWidth + 8;
       }
     };
 
@@ -80,14 +110,17 @@ export default function Home() {
   };
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
+    const audio = audioRef.current;
+    if (audio) {
+      setCurrentTime(audio.currentTime);
     }
   };
 
   const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
+    const audio = audioRef.current;
+    if (audio) {
+      console.log("Metadata loaded - Duration:", audio.duration);
+      setDuration(audio.duration);
     }
   };
 
