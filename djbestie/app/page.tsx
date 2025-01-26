@@ -39,7 +39,7 @@ export default function Home() {
       let x = 0;
 
       for (let i = 0; i < bufferLength; i++) {
-        const barHeight = Math.sqrt(dataArray[i]) * 6 + 6;
+        const barHeight = (dataArray[i]) / 2 + 6;
         const r = 255;
         const g = 255;
         const b = 255;
