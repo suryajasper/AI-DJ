@@ -3,36 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ResponsiveVoice.js Test</title>
+  <title>Text-to-Speech Test</title>
 </head>
 <body>
-  <h1>ResponsiveVoice.js Male Voice Test</h1>
+  <h1>Text-to-Speech Test</h1>
 
   <!-- Text Input -->
-  <textarea id="textInput" rows="5" cols="40" placeholder="Enter text to speak..."></textarea><br>
+  <textarea id="textToSpeak" rows="5" cols="40" placeholder="Enter text to convert to speech"></textarea><br><br>
+
+  <!-- Voice Selection -->
+  <label for="voiceSelect">Choose Voice:</label>
+  <select id="voiceSelect">
+    <option value="UK English Male">UK English Male</option>
+    <option value="UK English Female">UK English Female</option>
+    <option value="US English Male">US English Male</option>
+    <option value="US English Female">US English Female</option>
+  </select><br><br>
 
   <!-- Buttons -->
-  <button onclick="speak()">Speak</button>
-  <button onclick="stop()">Stop</button>
+  <button onclick="speakText()">Speak</button>
+  <button onclick="stopSpeaking()">Stop</button>
 
-  <!-- Include ResponsiveVoice.js -->
+  <!-- ResponsiveVoice.js -->
   <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
 
   <script>
-    // Speak text with a male voice
-    function speak() {
-      const text = document.getElementById('textInput').value;
+    // Function to speak the text
+    function speakText() {
+      const text = document.getElementById('textToSpeak').value;
+      const voice = document.getElementById('voiceSelect').value;
+
       if (!text) {
         alert("Please enter some text to speak!");
         return;
       }
 
-      // Use a male voice (e.g., "US English Male" or "UK English Male")
-      responsiveVoice.speak(text, "UK English Male");
+      // Call ResponsiveVoice to speak the text
+      responsiveVoice.speak(text, voice);
     }
 
-    // Stop the speech
-    function stop() {
+    // Function to stop speaking
+    function stopSpeaking() {
       responsiveVoice.cancel();
     }
   </script>
