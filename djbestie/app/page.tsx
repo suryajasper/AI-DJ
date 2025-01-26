@@ -1,13 +1,14 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
-  const canvasRef = useRef(null);
-  const audioRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const audio = audioRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
     // Set up Web Audio API
@@ -18,9 +19,11 @@ export default function Home() {
     const dataArray = new Uint8Array(bufferLength);
 
     // Connect audio element to analyser
-    const source = audioContext.createMediaElementSource(audio);
-    source.connect(analyser);
-    analyser.connect(audioContext.destination);
+    if (audio) {
+      const source = audioContext.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
+    }
 
     // Function to draw the visualizer
     const drawVisualizer = () => {
@@ -28,6 +31,7 @@ export default function Home() {
 
       analyser.getByteFrequencyData(dataArray); // Get frequency data
 
+      if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
 
       // Draw frequency bars
@@ -50,75 +54,178 @@ export default function Home() {
     };
 
     // Start drawing when audio is playing
-    audio.onplay = () => {
-      audioContext.resume().then(() => {
-        drawVisualizer();
-      });
-    };
+    if (audio) {
+      audio.onplay = () => {
+        audioContext.resume().then(() => {
+          drawVisualizer();
+        });
+      };
+    }
   }, []);
 
-  useEffect(() => {
-    const audio = audioRef.current;
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [songTitle, setSongTitle] = useState("Song Title");
+  const [artistName, setArtistName] = useState("Artist Name");
+  const [coverImg, setCoverImg] = useState("/coverImgs/sabrina.jpg");
 
-    const timeout = setTimeout(() => {
-      if (audio.paused) {
-        audio.play();
-      }
-    }, 500);
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current?.pause();
+    } else {
+      audioRef.current?.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
 
-    return () => clearTimeout(timeout); // Cleanup timeout on unmount
-  }, []);
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  };
+
 
   return (
     <div className="w-screen h-screen px-[5%] flex justify-center items-center gap-[48px]">
       <div className="w-[60%] h-[80%] justify-between items-center flex flex-col">
-        <h1 className="text-center text-[100px] my-[-20px]">DJ Bestie</h1>
+        <h1 className="text-center text-[100px] my-[-20px] text-[--popcol]">DJ Bestie</h1>
         <h1 className="text-center text-[30px] font-sans">
-          Your AI Music Player
+          Your AI Music Companion
         </h1>
-        <div className="h-[80%] mt-[24px] w-full border-2 border-zinc-700 rounded-[25px]"></div>
+        <div className="h-[80%] mt-[24px] w-full border-2 border-[--grey1] rounded-[25px] cursor-pointer hover:scale-[1.02]"></div>
       </div>
       <div className="w-[38%] h-full flex flex-col gap-[24px] justify-center items-center">
         <div className="h-[80%] w-full flex flex-col justify-between">
-          <div className="w-full h-[20%] border-2 border-zinc-700 rounded-[25px] overflow-hidden">
-            <audio ref={audioRef} autoPlay>
-              <source src="/track.mp3" type="audio/mp3" />
-              Your browser does not support the audio element.
-            </audio>
+          <div className="w-full h-[20%] border-2 border-[--grey1] rounded-[25px] overflow-hidden cursor-pointer hover:scale-[1.02]">
             <canvas
               className="w-full h-full p-[12px] flex justify-center items-center"
               ref={canvasRef}
             ></canvas>
           </div>
 
-          <div className="w-full h-[26%] border-2 border-zinc-700 rounded-[25px]"></div>
+          <div className="w-full h-[26%] border-2 border-[--grey1] rounded-[25px] cursor-pointer hover:scale-[1.02] flex">
+            <div className="w-[25%] flex flex-col justify-center pl-[12px]">
+              <img
+                src={coverImg}
+                alt="Cover"
+                className="w-[auto] h-[auto] rounded-lg object-cover"
+              />
+            </div>
+            <div className="w-[72%] h-[auto] pl-[24px] flex flex-col justify-center">
+              <div className="pb-[12px]">
+                <h2 className="text-[1.2vw] font-bold">{songTitle}</h2>
+                <h3 className="text-[0.9vw] text-[--grey1]">{artistName}</h3>
+              </div>
+
+
+              <div className="flex items-center gap-[12px] w-full">
+                <audio
+                  ref={audioRef}
+                  src="/track.mp3"
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                />
+                <button
+                  className="bg-[--popcol] text-[--grey2] rounded-full p-[4px] hover:scale-110 transition"
+                  onClick={togglePlay}
+                >
+                  {isPlaying ? "⏸️" : "▶️"}
+                </button>
+                <div className="w-[50%] h-[6px] bg-[--grey2] rounded-full overflow-hidden">
+                  <div
+                    className="h-[full] bg-[--popcol] rounded-full"
+                    style={{ width: `${(currentTime / duration) * 100}%` }}
+                  ></div>
+                </div>
+                <span className="text-[0.8vw]">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
           <div className="w-full h-[48%] grid grid-cols-2 gap-[24px]">
-            <div className="w-full h-full border-2 border-zinc-700 rounded-[25px] overflow-hidden pr-[4px]">
-              <div className="rounded-t-[10px] bg-[--spotify] h-[15%] mr-[-4px] mb-[12px] p-[12px] flex items-center">
-                <h1 className="text-[0.85vw] mx-[auto]">Queue</h1>
+            <div className="w-full h-full border-2 border-[--grey1] rounded-[25px] overflow-hidden pr-[4px]">
+              <div className="rounded-t-[10px] bg-[--popcol] h-[15%] mr-[-4px] mb-[12px] p-[12px] flex items-center">
+                <h1 className="text-[1vw] mx-[auto] text-[--dark2]">Similar Songs</h1>
               </div>
               <div className="px-[12px] pb-[12px] gap-[12px] h-[82%] flex flex-col overflow-y-scroll">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((item: any) => {
+                {[
+                  { id: 1, cover: "/coverImgs/sabrina.jpg", name: "yeehaw", artist: "Sabrina Carpenter" },
+                  { id: 2, cover: "/path/cover.jpg", name: "Song 2", artist: "Artist 2" },
+                  { id: 3, cover: "/path/cover.jpg", name: "Song 3", artist: "Artist 3" },
+                  { id: 4, cover: "/path/cover.jpg", name: "Song 4", artist: "Artist 4" },
+                  { id: 5, cover: "/path/cover.jpg", name: "Song 5", artist: "Artist 5" },
+                  { id: 6, cover: "/path/cover.jpg", name: "Song 6", artist: "Artist 6" },
+                  { id: 7, cover: "/path/cover.jpg", name: "Song 7", artist: "Artist 7" },
+                  { id: 8, cover: "/path/cover.jpg", name: "Song 8", artist: "Artist 8" },
+                ].map((item: any) => {
                   return (
                     <div
-                      className="w-full min-h-[20%] border-2 border-zinc-700 rounded-[15px] cursor-pointer hover:scale-[1.02]"
-                      key={item}
-                    ></div>
+                      className="w-full min-h-[20%] border-2 border-[--grey1] rounded-[15px] cursor-pointer hover:scale-[1.02] flex"
+                      key={item.id}
+                    >
+                      <div className="w-auto h-full flex flex-col">
+                        <img
+                          src={item.cover}
+                          alt={item.name}
+                          className="w-auto h-full rounded-[10px] object-cover"
+                        />
+                      </div>
+                      <div className="w-[auto] h-full flex flex-col pl-[10px] justify-center">
+                        <h2 className="text-[0.85vw] font-medium">{item.name}</h2>
+                        <h3 className="text-[0.75vw]">{item.artist}</h3>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             </div>
-            <div className="w-full h-full border-2 border-zinc-700 rounded-[25px] overflow-hidden pr-[4px]">
-              <div className="rounded-t-[10px] bg-[--spotify] h-[15%] mr-[-4px] mb-[12px] p-[12px] flex items-center">
-                <h1 className="text-[0.85vw] mx-[auto]">Similar Artists</h1>
+            <div className="w-full h-full border-2 border-[--grey1] rounded-[25px] overflow-hidden pr-[4px]">
+              <div className="rounded-t-[10px] bg-[--popcol] h-[15%] mr-[-4px] mb-[12px] p-[12px] flex items-center">
+                <h1 className="text-[1vw] mx-[auto] text-[--dark2]">Similar Artists</h1>
               </div>
               <div className="px-[12px] pb-[12px] gap-[12px] h-[82%] flex flex-col overflow-y-scroll">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((item: any) => {
+                {[
+                  { id: 1, cover: "/coverImgs/sabrina.jpg", artist: "Sabrina Carpenter" },
+                  { id: 2, cover: "/path/cover.jpg", artist: "Artist 2" },
+                  { id: 3, cover: "/path/cover.jpg", artist: "Artist 3" },
+                  { id: 4, cover: "/path/cover.jpg", artist: "Artist 4" },
+                  { id: 5, cover: "/path/cover.jpg", artist: "Artist 5" },
+                  { id: 6, cover: "/path/cover.jpg", artist: "Artist 6" },
+                  { id: 7, cover: "/path/cover.jpg", artist: "Artist 7" },
+                  { id: 8, cover: "/path/cover.jpg", artist: "Artist 8" },
+                ].map((item: any) => {
                   return (
                     <div
-                      className="w-full min-h-[20%] border-2 border-zinc-700 rounded-[15px] cursor-pointer hover:scale-[1.02]"
-                      key={item}
-                    ></div>
+                      className="w-full min-h-[20%] border-2 border-[--grey1] rounded-[15px] cursor-pointer hover:scale-[1.02] flex"
+                      key={item.id}
+                    >
+                      <div className="w-auto h-full flex flex-col">
+                        <img
+                          src={item.cover}
+                          alt={item.name}
+                          className="w-auto h-full rounded-[10px] object-cover"
+                        />
+                      </div>
+                      <div className="w-[auto] h-full flex flex-col pl-[10px] justify-center">
+                        <h2 className="text-[0.8vw]">{item.artist}</h2>
+                      </div>
+                    </div>
                   );
                 })}
               </div>

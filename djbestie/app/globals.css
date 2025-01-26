@@ -4,19 +4,21 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --grey2: #171717;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --spotify: #1db954;
+    --background: #121212;
+    --dark2: #212121;
+    --grey1: #535353;
+    --grey2: #b3b3b3;
+    --popcol: #C9A0FF;
   }
 }
 
 body {
-  color: var(--foreground);
+  color: var(--grey2);
   background: var(--background);
 }
 
@@ -26,14 +28,17 @@ body {
 
 /* Style for Webkit Browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
-  width: 4px; /* Width of the scrollbar */
+  width: 4px;
+  /* Width of the scrollbar */
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: white; /* Color of the scrollbar thumb */
+  background-color: white;
+  /* Color of the scrollbar thumb */
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent; /* Transparent track */
+  background: transparent;
+  /* Transparent track */
 }
