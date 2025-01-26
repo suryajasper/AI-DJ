@@ -2,4 +2,3 @@
 secrets.*
 **pycache**
 .env
-VirtualDJ/**
