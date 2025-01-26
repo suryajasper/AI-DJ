@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResponsiveVoice.js Test</title>
+</head>
+<body>
+  <h1>ResponsiveVoice.js Male Voice Test</h1>
+
+  <!-- Text Input -->
+  <textarea id="textInput" rows="5" cols="40" placeholder="Enter text to speak..."></textarea><br>
+
+  <!-- Buttons -->
+  <button onclick="speak()">Speak</button>
+  <button onclick="stop()">Stop</button>
+
+  <!-- Include ResponsiveVoice.js -->
+  <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+
+  <script>
+    // Speak text with a male voice
+    function speak() {
+      const text = document.getElementById('textInput').value;
+      if (!text) {
+        alert("Please enter some text to speak!");
+        return;
+      }
+
+      // Use a male voice (e.g., "US English Male" or "UK English Male")
+      responsiveVoice.speak(text, "UK English Male");
+    }
+
+    // Stop the speech
+    function stop() {
+      responsiveVoice.cancel();
+    }
+  </script>
+</body>
+</html>
